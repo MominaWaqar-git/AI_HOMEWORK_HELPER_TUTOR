@@ -1,0 +1,71 @@
+<svg width="300" height="100" viewBox="0 0 260 90" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <!-- Glow Animation -->
+    <radialGradient id="glow" cx="0" cy="0" r="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9">
+        <animate attributeName="stop-opacity" values="0.9;0.3;0.9" dur="2.5s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Icon Gradient -->
+    <linearGradient id="grad1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+
+    <!-- ✨ TEXT PREMIUM GRADIENT -->
+    <linearGradient id="textGrad">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#facc15"/>
+    </linearGradient>
+
+  </defs>
+
+  <!-- Glow Circle -->
+  <circle cx="45" cy="45" r="26" fill="url(#glow)">
+    <animate attributeName="r" values="22;28;22" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Book Icon -->
+  <path d="M25 50 Q45 30 65 50"
+        stroke="url(#grad1)" stroke-width="3" fill="none"/>
+
+  <path d="M25 50 Q45 70 65 50"
+        stroke="url(#grad1)" stroke-width="3" fill="none"/>
+
+  <!-- Star -->
+  <g transform="translate(45,28)">
+    <polygon points="0,-10 3,-3 10,-3 5,2 7,9 0,5 -7,9 -5,2 -10,-3 -3,-3"
+      fill="#facc15">
+      <animateTransform attributeName="transform"
+        type="rotate"
+        from="0 0 0"
+        to="360 0 0"
+        dur="6s"
+        repeatCount="indefinite"/>
+    </polygon>
+  </g>
+
+<!-- MAIN TEXT -->
+<text x="95" y="50"
+      font-family="Poppins, sans-serif"
+      font-size="32"
+      font-weight="700"
+      fill="url(#textGrad)">
+  Ilmexa
+</text>
+
+<!-- SUBTEXT -->
+<text x="97" y="70"
+      font-family="Poppins, sans-serif"
+      font-size="13"
+      fill="#a5b4fc"
+      opacity="0.9"
+      letter-spacing="0.5px">
+  AI Learning Assistant
+</text>
+
+</svg>
