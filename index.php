@@ -54,7 +54,7 @@ header {
     position: sticky;
     top: 0;
     z-index: 100;
-
+    font-weight: bold;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -120,7 +120,7 @@ nav a {
     color: #cbd5f5;
     font-weight: 500;
     font-size: 14px;
-
+    font-weight: bold;
     position: relative;
     padding: 6px 4px;
 
@@ -129,6 +129,7 @@ nav a {
 
 /* hover glow text */
 nav a:hover {
+    font-weight: bold;
     color: #38bdf8;
     text-shadow: 0 0 10px rgba(56,189,248,0.3);
 }
@@ -151,7 +152,7 @@ nav a:hover::after {
     width: 100%;
 }
 
-/* active feel (optional future use) */
+/* active feel */
 nav a.active {
     color: #38bdf8;
     border-bottom: 2px solid #38bdf8;
@@ -212,6 +213,7 @@ nav a.active {
 }
 
 /* CARD */
+/* CARD */
 .card {
     width: 300px;
     padding: 32px;
@@ -248,6 +250,7 @@ nav a.active {
 
     transform: skewX(-20deg);
     transition: left 1.4s ease-in-out;
+    z-index: 0; /* FIX */
 }
 
 .card:hover::before {
@@ -271,10 +274,31 @@ nav a.active {
     opacity: 0;
     transition: 0.5s;
     pointer-events: none;
+    z-index: 0; /* FIX */
 }
 
 .card:hover::after {
     opacity: 1;
+}
+
+/* TEXT (ABOVE OVERLAY) */
+.card h3,
+.card p {
+    position: relative;
+    z-index: 1;
+}
+
+/* NORMAL TEXT */
+.card h3 {
+    color: #38bdf8;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.card p {
+    color: #cbd5f5;
+    font-size: 14px;
+    opacity: 0.9;
 }
 
 /* HOVER */
@@ -288,26 +312,29 @@ nav a.active {
     transform: scale(1.1) translateY(-10px);
     border: 1px solid #38bdf8;
     box-shadow: 0 0 35px rgba(56,189,248,0.6);
+
+    /* darker background for contrast */
+    background: rgba(15, 23, 42, 0.85);
 }
 
-/* TEXT */
-.card h3 {
-    color: #38bdf8;
-    margin-bottom: 10px;
-    font-size: 18px;
+/* ACTIVE TEXT  */
+.card.active h3 {
+    color: #7dd3fc;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
 }
 
-.card p {
-    color: #cbd5f5;
-    font-size: 14px;
-    opacity: 0.9;
+.card.active p {
+    color: #ffffff;
+    opacity: 1;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
 }
 
-/* ================= FOOTER (FIXED + PREMIUM) ================= */
+/* ================= FOOTER ================= */
 footer {
     margin-top: 120px;
     padding: 35px 20px;
     text-align: center;
+    font-weight: bold;
 
     background: linear-gradient(
         135deg,
@@ -353,7 +380,7 @@ footer::after {
 
 footer span {
     color: #38bdf8;
-    font-weight: bold;
+    font-weight: bolder;
     text-shadow: 0 0 10px rgba(56,189,248,0.4);
 }
 
@@ -399,7 +426,7 @@ footer span {
 
     <?php if(!isset($_SESSION['user'])) { ?>
         <a href="login.php" class="btn">Get Started</a>
-    <?php } else { ?>
+    <?php }  else { ?>
         <a href="dashboard.php" class="btn">Go to Dashboard</a>
     <?php } ?>
 
@@ -429,19 +456,17 @@ footer span {
 </footer>
 
 <script>
-const cards = document.querySelectorAll('.card');
+const cards = document.querySelectorAll(".card");
 
 cards.forEach(card => {
-    card.addEventListener('click', () => {
-        cards.forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-
-        setTimeout(() => {
-            card.classList.remove('active');
-        }, 900);
+    card.addEventListener("click", () => {
+        cards.forEach(c => c.classList.remove("active")); 
+        card.classList.add("active"); 
     });
 });
 </script>
+
+
 
 </body>
 </html>
