@@ -1,9 +1,23 @@
 <?php
 session_start();
+include "db.php";
 
-if (!isset($_SESSION['user'])) {
-    header("Location: login.php");
-    exit();
+$user_id = $_SESSION['id'];
+
+// last 7 days chat count
+$dataPoints = [];
+
+for($i=6;$i>=0;$i--){
+    $date = date("Y-m-d", strtotime("-$i days"));
+
+    $q = "SELECT COUNT(*) as total FROM chats 
+          WHERE user_id = $user_id 
+          AND DATE(created_at) = '$date'";
+
+    $res = $conn->query($q);
+    $row = $res->fetch_assoc();
+
+    $dataPoints[] = $row['total'];
 }
 ?>
 
@@ -52,6 +66,42 @@ body::after{
     background:rgba(34,197,94,0.14);
     bottom:-160px;
     right:-160px;
+}
+
+.welcome{
+    text-align:center;
+    font-size:45px;
+    font-weight:bold;
+    margin-bottom:40px;
+    animation:fadeInUp 1s ease;
+}
+
+/* animated gradient text */
+.welcome span{
+    background:linear-gradient(270deg,#38bdf8,#22c55e,#facc15,#a855f7,#38bdf8);
+    background-size:800% 800%;
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+
+    animation:gradientMove 6s ease infinite;
+}
+
+/* animations */
+@keyframes gradientMove{
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
+
+@keyframes fadeInUp{
+    from{
+        opacity:0;
+        transform:translateY(40px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
 }
 
 /* ================= HEADER ================= */
@@ -163,75 +213,139 @@ nav a.active {
     -webkit-text-fill-color:transparent;
 }
 
-/* ================= CARDS ================= */
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#0f172a;
+    color:white;
+}
+
+/* GRID */
+.card-container{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:20px;
+    padding:40px;
+}
+
+/* GRID */
+.card-container{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:20px;
+    padding:40px;
+}
+
+/* optional wrapper */
 .cards{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-    gap:25px;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:30px;
+    perspective:1200px;
 }
 
-/* PREMIUM CARD */
+/* CARD BASE */
 .card{
-    padding:28px;
+    padding:30px;
     border-radius:20px;
-    background:rgba(255,255,255,0.04);
-    border:1px solid rgba(56,189,248,0.15);
-    backdrop-filter:blur(18px);
-    cursor:pointer;
-    transition:0.4s;
+
+    /* ❌ remove glass background */
+    background:transparent;
+
     position:relative;
     overflow:hidden;
+
+    color:white;
+    text-align:center;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+
+    transform-style:preserve-3d;
+    transition:0.4s ease;
+
+    animation: floatCard 5s ease-in-out infinite;
+
+    box-shadow:0 10px 30px rgba(0,0,0,0.25);
 }
 
-/* gradient hover sweep */
+/* 🌈 PREMIUM GRADIENT LOOK */
 .card::before{
     content:"";
     position:absolute;
-    top:0;
-    left:-150%;
-    width:150%;
-    height:100%;
-    background:linear-gradient(120deg,transparent,rgba(56,189,248,0.25),rgba(34,197,94,0.15),transparent);
-    transform:skewX(-20deg);
-    transition:0.8s;
+    inset:0;
+    border-radius:20px;
+    z-index:0;
 }
 
-.card:hover::before{
-    left:150%;
+/* individual gradients */
+.card:nth-child(1)::before{ background:linear-gradient(135deg,#38bdf8,#0ea5e9); }
+.card:nth-child(2)::before{ background:linear-gradient(135deg,#22c55e,#16a34a); }
+.card:nth-child(3)::before{ background:linear-gradient(135deg,#a855f7,#9333ea); }
+.card:nth-child(4)::before{ background:linear-gradient(135deg,#fb7185,#e11d48); }
+.card:nth-child(5)::before{ background:linear-gradient(135deg,#14b8a6,#0d9488); }
+.card:nth-child(6)::before{ background:linear-gradient(135deg,#f97316,#ea580c); }
+.card:nth-child(7)::before{ background:linear-gradient(135deg,#6366f1,#4f46e5); }
+.card:nth-child(8)::before{ background:linear-gradient(135deg,#06b6d4,#0284c7); }
+
+/* content layer above gradient */
+.card > *{
+    position:relative;
+    z-index:2;
 }
 
+/* ✨ glow border */
+.card::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:20px;
+    padding:1px;
+    background:linear-gradient(135deg,#ffffff40,#ffffff10);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask-composite:exclude;
+    opacity:0.5;
+    z-index:3;
+}
+
+/* 💡 glow hover */
 .card:hover{
-    transform:translateY(-12px) scale(1.05);
-    box-shadow:0 30px 70px rgba(0,0,0,0.5);
+    transform:translateY(-15px) scale(1.08) rotateX(8deg) rotateY(10deg);
+    box-shadow:0 35px 90px rgba(0,0,0,0.6);
 }
 
-/* ICON TITLE */
+/* floating animation */
+@keyframes floatCard{
+    0%{transform:translateY(0px);}
+    50%{transform:translateY(-8px);}
+    100%{transform:translateY(0px);}
+}
+
+/* TEXT */
 .card h3{
-    font-size:18px;
+    font-size:20px;
     margin-bottom:10px;
-    color:#38bdf8;
 }
-
-/* CARD COLORS VARIETY */
-.card:nth-child(1) h3{ color:#38bdf8; }
-.card:nth-child(2) h3{ color:#22c55e; }
-.card:nth-child(3) h3{ color:#facc15; }
-.card:nth-child(4) h3{ color:#a855f7; }
-.card:nth-child(5) h3{ color:#fb7185; }
 
 .card p{
-    color:#cbd5f5;
     font-size:14px;
-    opacity:0.9;
+    color:#f1f5f9;
 }
 
-/* ================= GRAPH ================= */
+
 .graph{
-    margin-top:50px;
-    padding:25px;
-    border-radius:20px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(56,189,248,0.15);
+    margin-top:40px;
+    padding:20px;
+    border-radius:15px;
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(56,189,248,0.2);
+    max-height: 1000px;
+    max-width:1000px;
+    margin-left:auto;
+    margin-right:auto;
 }
 
 /* ================= FOOTER ================= */
@@ -285,30 +399,48 @@ footer span{
     <!-- CARDS -->
     <div class="cards">
 
-        <div class="card" onclick="location.href='chat.php'">
-            <h3>🧠 Chat with AI</h3>
-            <p>Talk with AI instantly</p>
-        </div>
+    <div class="card" onclick="location.href='chat.php'">
+        <h3>🧠 Chat with AI</h3>
+        <p>Talk with AI instantly</p>
+    </div>
 
-        <div class="card" onclick="location.href='history.php'">
-            <h3>📜 Chat History</h3>
-            <p>View past conversations</p>
-        </div>
+    <div class="card" onclick="location.href='history.php'">
+        <h3>📜 Chat History</h3>
+        <p>View past conversations</p>
+    </div>
 
-        <div class="card" onclick="location.href='save.php'">
-            <h3>💾 Save Chat</h3>
-            <p>Save important answers</p>
-        </div>
+    <div class="card" onclick="location.href='save.php'">
+        <h3>💾 Saved Chats</h3>
+        <p>Access important answers</p>
+    </div>
 
-        <div class="card" onclick="location.href='homework.php'">
-            <h3>📘 Homework Help</h3>
-            <p>Step-by-step solutions</p>
-        </div>
+    <div class="card" onclick="location.href='homework.php'">
+        <h3>📘 Homework Help</h3>
+        <p>Step-by-step explanations</p>
+    </div>
 
-        <div class="card" onclick="location.href='quiz.php'">
-            <h3>⚡ Solve Quiz</h3>
-            <p>MCQs with explanation</p>
-        </div>
+    <div class="card" onclick="location.href='quiz.php'">
+        <h3>⚡ AI Quiz</h3>
+        <p>Generate MCQs instantly</p>
+    </div>
+
+    <!-- 🔥 MAKE SCHEDULE (NEW CLEAR BUTTON) -->
+    <div class="card" onclick="location.href='schedule.php'">
+        <h3>📅 Make Schedule</h3>
+        <p>Create your daily study plan</p>
+    </div>
+
+    <div class="card" onclick="location.href='important.php'">
+        <h3>⭐ Important Chats</h3>
+        <p>Mark & view key answers</p>
+    </div>
+
+    <div class="card" onclick="location.href='notes.php'">
+        <h3>📝 Notes Generator</h3>
+        <p>Convert answers into notes</p>
+    </div>
+
+</div>
 
     </div>
 
@@ -329,16 +461,42 @@ footer span{
 new Chart(document.getElementById("chart"), {
     type: "line",
     data: {
-        labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+        labels: ["6d","5d","4d","3d","2d","1d","Today"],
         datasets: [{
-            label: "Activity",
-            data: [3,5,4,8,6,7,9],
-            borderColor: "#38bdf8",
-            tension: 0.4
+            label: "Chats Activity",
+            data: <?php echo json_encode($dataPoints); ?>,
+
+            borderColor: "#22c55e",
+            backgroundColor: "rgba(34,197,94,0.15)",
+
+            fill:true,
+            tension:0.5,
+
+            pointRadius:6,
+            pointBackgroundColor:"#38bdf8",
+            pointBorderColor:"#fff",
+            pointBorderWidth:2
         }]
+    },
+    options:{
+        responsive:true,
+        plugins:{
+            legend:{
+                labels:{ color:"#fff" }
+            }
+        },
+        scales:{
+            x:{
+                ticks:{ color:"#94a3b8" },
+                grid:{ color:"rgba(255,255,255,0.05)" }
+            },
+            y:{
+                ticks:{ color:"#94a3b8" },
+                grid:{ color:"rgba(255,255,255,0.05)" }
+            }
+        }
     }
 });
 </script>
-
 </body>
 </html>

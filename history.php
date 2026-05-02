@@ -7,22 +7,28 @@ if (!isset($_SESSION['user'])) {
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['id'];
 
-$sql = "SELECT * FROM chats WHERE user_id = '$user_id' ORDER BY id DESC";
-$result = $conn->query($sql);
+$stmt = $conn->prepare("
+    SELECT chat_id, chat_title, MAX(created_at) as last_date
+    FROM chats
+    WHERE user_id=?
+    GROUP BY chat_id
+    ORDER BY last_date DESC
+");
 
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Chat History - Ilmexa AI</title>
+<title>Chat History</title>
 
 <style>
-
-/* ================= GLOBAL ================= */
 *{
     margin:0;
     padding:0;
@@ -35,34 +41,19 @@ body{
     color:#e2e8f0;
 }
 
-/* ================= HEADER (same as dashboard style) ================= */
-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    padding: 14px 80px;
-
-    /* glass premium background */
-    background: linear-gradient(
-        135deg,
-        rgba(10, 15, 25, 0.75),
-        rgba(15, 23, 42, 0.55)
-    );
-
-    backdrop-filter: blur(22px);
-
-    border-bottom: 1px solid rgba(56,189,248,0.15);
-
-    /* subtle shadow */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+/* HEADER */
+header{
+    position:sticky;
+    top:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 50px;
+    background:rgba(10,15,25,0.7);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid rgba(56,189,248,0.2);
 }
 
-/* 🌟 bottom glow line */
 header::after {
     content: "";
     position: absolute;
@@ -82,18 +73,10 @@ header::after {
     opacity: 0.6;
 }
 
-/* ================= LOGO ================= */
-.logo img {
-    height: 60px;
-    transition: 0.35s ease;
+.logo img{
+    height:55px;
 }
 
-.logo img:hover {
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 18px rgba(56,189,248,0.8));
-}
-
-/* ================= NAV ================= */
 nav {
     display: flex;
     align-items: center;
@@ -144,52 +127,63 @@ nav a.active {
     border-bottom: 2px solid #38bdf8;
 }
 
-
-/* ================= CONTAINER ================= */
+/* CONTAINER */
 .container{
-    padding:40px 80px;
+    padding:40px;
 }
 
-/* TITLE */
 h1{
-    font-size:34px;
     text-align:center;
     margin-bottom:30px;
-    background:linear-gradient(90deg,#38bdf8,#22c55e,#facc15);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
+    color:#38bdf8;
 }
 
-/* ================= HISTORY CARDS ================= */
+/* CARD */
 .card{
     background:rgba(255,255,255,0.04);
-    border:1px solid rgba(56,189,248,0.15);
-    padding:20px;
-    border-radius:15px;
+    padding:18px;
+    border-radius:14px;
     margin-bottom:15px;
+    border:1px solid rgba(56,189,248,0.15);
     transition:0.3s;
 }
 
 .card:hover{
     transform:translateY(-5px);
-    background:rgba(255,255,255,0.06);
 }
 
-.user-msg{
-    color:#38bdf8;
+/* BUTTONS */
+.view-btn{
+    padding:8px 12px;
+    border:none;
+    border-radius:8px;
+    background:#38bdf8;
+    color:black;
     font-weight:bold;
+    cursor:pointer;
+    margin-top:10px;
 }
 
-.bot-msg{
-    color:#cbd5f5;
-    margin-top:5px;
+.delete-btn{
+    padding:8px 12px;
+    border:none;
+    border-radius:8px;
+    background:#ef4444;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.delete-btn:hover{
+    transform:scale(1.05);
 }
 
 /* DATE */
 .date{
     font-size:12px;
     color:#94a3b8;
-    margin-top:8px;
+    margin-top:5px;
 }
 
 /* EMPTY */
@@ -200,10 +194,10 @@ h1{
 }
 
 footer {
+    font-weight: bold;
     margin-top: 120px;
     padding: 35px 20px;
     text-align: center;
-    font-weight: bold;
 
     background: linear-gradient(
         135deg,
@@ -231,6 +225,7 @@ footer::before {
     transform: translateX(-50%);
     width: 60%;
     height: 2px;
+    font-weight: bold;
     background: linear-gradient(90deg, transparent, #38bdf8, #22c55e, transparent);
     opacity: 0.6;
 }
@@ -260,8 +255,9 @@ footer span {
 <body>
 
 <header>
-
-    <div class="logo">Ilmexa AI</div>
+    <div class="logo">
+        <img src="logo-animated.svg">
+    </div>
 
     <nav>
         <a href="dashboard.php">Dashboard</a>
@@ -269,38 +265,64 @@ footer span {
         <a href="history.php">History</a>
         <a href="logout.php">Logout</a>
     </nav>
-
 </header>
 
 <div class="container">
 
-    <h1>📜 Your Chat History</h1>
+<h1>📜 Chat History</h1>
 
-    <?php if ($result->num_rows > 0) { ?>
+<?php if($result->num_rows > 0){ ?>
 
-        <?php while($row = $result->fetch_assoc()) { ?>
+    <?php while($row = $result->fetch_assoc()){ ?>
 
-            <div class="card">
+        <div class="card">
 
-                <div class="user-msg">🧑 You: <?php echo htmlspecialchars($row['message']); ?></div>
+            <h3 style="color:#38bdf8;">
+                💬 <?php echo $row['chat_title'] ?? 'Untitled Chat'; ?>
+            </h3>
 
-                <div class="bot-msg">🤖 AI: <?php echo htmlspecialchars($row['reply']); ?></div>
+            <div class="date">🕒 <?php echo $row['last_date']; ?></div>
 
-                <div class="date">🕒 <?php echo $row['created_at']; ?></div>
+            <!-- VIEW -->
+            <a href="view_chat.php?chat_id=<?php echo urlencode($row['chat_id']); ?>">
+                <button class="view-btn">👁 View</button>
+            </a>
 
-            </div>
+            <!-- DELETE (FIXED ID ISSUE) -->
+            <a href="delete_chat.php?chat_id=<?php echo urlencode($row['chat_id']); ?>"
+               onclick="return confirmDelete(event)">
+                <button class="delete-btn">🗑 Delete</button>
+            </a>
 
-        <?php } ?>
-
-    <?php } else { ?>
-
-        <div class="empty">
-            No chat history found 😔
         </div>
 
     <?php } ?>
 
+<?php } else { ?>
+
+    <div class="empty">No chat history found 😔</div>
+
+<?php } ?>
+
 </div>
+
+<footer>
+    © 2026 <span>Ilmexa AI</span> — Smart Learning Platform
+</footer>
+
+<script>
+function confirmDelete(event){
+    event.preventDefault();
+
+    let ok = confirm("⚠ Are you sure you want to delete this chat?");
+
+    if(ok){
+        window.location.href = event.target.closest("a").href;
+    }
+
+    return false;
+}
+</script>
 
 </body>
 </html>

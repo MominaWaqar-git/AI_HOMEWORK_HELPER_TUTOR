@@ -310,6 +310,41 @@ footer span {
     0%,100%{opacity:0.2}
     50%{opacity:1}
 }
+
+.copy-btn, .save-btn{
+    padding:10px 14px;
+    border:none;
+    border-radius:10px;
+    margin:5px;
+    cursor:pointer;
+    font-weight:bold;
+    color:white;
+    transition:0.3s;
+}
+
+.mini-copy{
+    float:right;
+    margin-left:10px;
+    background:transparent;
+    border:none;
+    color:#38bdf8;
+    cursor:pointer;
+    font-size:14px;
+    transition:0.2s;
+}
+
+.mini-copy:hover{
+    transform:scale(1.3);
+    color:#22c55e;
+}
+
+.save-btn{
+    background:linear-gradient(135deg,#a855f7,#fb7185);
+}
+
+.save-btn:hover{
+    transform:scale(1.05);
+}
 </style>
 
 </head>
@@ -350,11 +385,14 @@ footer span {
 
     <!-- VOICE -->
     <button class="voice-btn" onclick="startVoice()">🎤</button>
-
     <!-- SEND -->
     <button class="send-btn" onclick="send()">Send</button>
+    <button onclick="saveChat()" class="save-btn">💾 Save Chat</button>
+
 
 </div>
+
+
 
 <!-- FOOTER -->
 <footer>
@@ -372,11 +410,14 @@ async function send(){
 
     let box = document.getElementById("chatBox");
 
-    // user msg
-    box.innerHTML += `<div class="msg user">${escapeHtml(text)}</div>`;
+    box.innerHTML += `
+        <div class="msg user">
+        ${escapeHtml(text)}
+        <button class="mini-copy" onclick="copyMsg(this)">📋</button>
+        </div>`;
+
     input.value="";
 
-    // typing indicator
     let loading = document.createElement("div");
     loading.className = "msg bot";
     loading.innerHTML = "🤖 Thinking...";
@@ -395,17 +436,36 @@ async function send(){
 
     document.getElementById("loadingMsg").remove();
 
-    // IMPORTANT FIX: proper formatting
     let formatted = formatText(data.reply);
 
-    box.innerHTML += `<div class="msg bot">${formatted}</div>`;
-    box.scrollTop = box.scrollHeight;
+    let botDiv = document.createElement("div");
+    botDiv.className = "msg bot";
+
+    // content wrapper (important for formatting)
+    let content = document.createElement("div");
+    content.innerHTML = formatted;
+
+    // copy button
+    let btn = document.createElement("button");
+    btn.className = "mini-copy";
+    btn.innerHTML = "📋";
+    btn.onclick = function(){
+       navigator.clipboard.writeText(content.innerText);
+       alert("Copied!");
+    };
+
+    botDiv.appendChild(content);
+    botDiv.appendChild(btn);
+
+    box.appendChild(botDiv);
 }
 
-/* ===== FIX FUNCTIONS ===== */
 function formatText(text){
+    if(!text) return "";
+
     return text
-        .replace(/\n/g, "<br>")
+        .replace(/\\n/g, "<br>")   
+        .replace(/\n/g, "<br>")    
         .trim();
 }
 
@@ -414,6 +474,38 @@ function escapeHtml(text){
         .replaceAll("&","&amp;")
         .replaceAll("<","&lt;")
         .replaceAll(">","&gt;");
+}
+
+function renderSafeHTML(text){
+    return text
+        .replace(/```([\s\S]*?)```/g, "<pre>$1</pre>") 
+        .replace(/\\n/g, "<br>");
+}
+
+function copyMsg(btn){
+    let msgBox = btn.parentElement;
+
+    let text = msgBox.innerText.replace("📋", "").trim();
+
+    navigator.clipboard.writeText(text)
+    .then(() => {
+        alert("📋 Message copied!");
+    })
+    .catch(() => {
+        alert("❌ Copy failed");
+    });
+}
+
+function saveChat(){
+    let chat = document.getElementById("chatBox").innerText;
+
+    let blob = new Blob([chat], { type: "text/plain" });
+    let link = document.createElement("a");
+
+    link.href = URL.createObjectURL(blob);
+    link.download = "ilmexa_chat.txt";
+
+    link.click();
 }
 
 /* ================= VOICE INPUT ================= */
