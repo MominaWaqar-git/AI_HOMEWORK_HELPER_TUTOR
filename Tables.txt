@@ -1,0 +1,49 @@
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(120) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE chats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    user_id INT NOT NULL,
+
+    chat_id VARCHAR(100) NOT NULL,
+
+    message TEXT NOT NULL,
+
+    reply TEXT NOT NULL,
+
+    image_path VARCHAR(255) DEFAULT NULL,
+
+    chat_title VARCHAR(255) DEFAULT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE student_schedules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    user_id INT NOT NULL,
+
+    title VARCHAR(255) NOT NULL,
+
+    task_description TEXT NOT NULL,
+
+    schedule_date DATE NOT NULL,
+
+    start_time TIME NOT NULL,
+
+    end_time TIME NOT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE student_schedules
+ADD CONSTRAINT fk_schedule_user
+FOREIGN KEY (user_id) REFERENCES users(id)
+ON DELETE CASCADE;
+

@@ -1,7 +1,6 @@
 <?php
 session_start();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,6 +23,9 @@ body {
     background: radial-gradient(circle at top, #0f2027, #0b1220, #050814);
     color: #e2e8f0;
     overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ================= BACKGROUND GLOW ================= */
@@ -58,25 +60,13 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-
     padding: 14px 80px;
-
-    /* glass premium background */
-    background: linear-gradient(
-        135deg,
-        rgba(10, 15, 25, 0.75),
-        rgba(15, 23, 42, 0.55)
-    );
-
+    background: linear-gradient(135deg, rgba(10, 15, 25, 0.75), rgba(15, 23, 42, 0.55));
     backdrop-filter: blur(22px);
-
     border-bottom: 1px solid rgba(56,189,248,0.15);
-
-    /* subtle shadow */
     box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 
-/* 🌟 bottom glow line */
 header::after {
     content: "";
     position: absolute;
@@ -85,18 +75,10 @@ header::after {
     transform: translateX(-50%);
     width: 65%;
     height: 2px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        #38bdf8,
-        #22c55e,
-        #facc15,
-        transparent
-    );
+    background: linear-gradient(90deg, transparent, #38bdf8, #22c55e, #facc15, transparent);
     opacity: 0.6;
 }
 
-/* ================= LOGO ================= */
 .logo img {
     height: 60px;
     transition: 0.35s ease;
@@ -114,27 +96,21 @@ nav {
     gap: 18px;
 }
 
-/* links */
 nav a {
     text-decoration: none;
     color: #cbd5f5;
-    font-weight: 500;
     font-size: 14px;
     font-weight: bold;
     position: relative;
     padding: 6px 4px;
-
     transition: 0.3s ease;
 }
 
-/* hover glow text */
 nav a:hover {
-    font-weight: bold;
     color: #38bdf8;
     text-shadow: 0 0 10px rgba(56,189,248,0.3);
 }
 
-/* animated underline */
 nav a::after {
     content: "";
     position: absolute;
@@ -142,9 +118,7 @@ nav a::after {
     bottom: -4px;
     width: 0%;
     height: 2px;
-
     background: linear-gradient(90deg, #38bdf8, #22c55e, #facc15);
-
     transition: width 0.35s ease;
 }
 
@@ -152,16 +126,11 @@ nav a:hover::after {
     width: 100%;
 }
 
-/* active feel */
-nav a.active {
-    color: #38bdf8;
-    border-bottom: 2px solid #38bdf8;
-}
-
 /* ================= HERO ================= */
 .hero {
     text-align: center;
     padding: 110px 20px 60px;
+    flex: 1;
 }
 
 .hero h2 {
@@ -185,7 +154,6 @@ nav a.active {
     line-height: 1.7;
 }
 
-/* BUTTON */
 .btn {
     display: inline-block;
     margin-top: 30px;
@@ -212,25 +180,20 @@ nav a.active {
     flex-wrap: wrap;
 }
 
-/* CARD */
-/* CARD */
 .card {
     width: 300px;
     padding: 32px;
     border-radius: 20px;
     text-align: center;
-
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(56,189,248,0.15);
     backdrop-filter: blur(20px);
-
     position: relative;
     overflow: hidden;
     cursor: pointer;
     transition: 0.4s ease;
 }
 
-/* GLASS SWEEP */
 .card::before {
     content: "";
     position: absolute;
@@ -238,57 +201,38 @@ nav a.active {
     left: -180%;
     width: 160%;
     height: 100%;
-
-    background: linear-gradient(
-        120deg,
-        transparent,
-        rgba(56,189,248,0.14),
-        rgba(34,197,94,0.08),
-        rgba(255,255,255,0.06),
-        transparent
-    );
-
+    background: linear-gradient(120deg, transparent, rgba(56,189,248,0.14), rgba(34,197,94,0.08), rgba(255,255,255,0.06), transparent);
     transform: skewX(-20deg);
     transition: left 1.4s ease-in-out;
-    z-index: 0; /* FIX */
+    z-index: 0;
 }
 
 .card:hover::before {
     left: 180%;
 }
 
-/* BORDER GLOW */
 .card::after {
     content: "";
     position: absolute;
     inset: 0;
     padding: 1px;
     border-radius: 20px;
-    background: linear-gradient(
-        120deg,
-        transparent,
-        rgba(56,189,248,0.6),
-        rgba(34,197,94,0.4),
-        transparent
-    );
+    background: linear-gradient(120deg, transparent, rgba(56,189,248,0.6), rgba(34,197,94,0.4), transparent);
     opacity: 0;
     transition: 0.5s;
     pointer-events: none;
-    z-index: 0; /* FIX */
+    z-index: 0;
 }
 
 .card:hover::after {
     opacity: 1;
 }
 
-/* TEXT (ABOVE OVERLAY) */
-.card h3,
-.card p {
+.card h3, .card p {
     position: relative;
     z-index: 1;
 }
 
-/* NORMAL TEXT */
 .card h3 {
     color: #38bdf8;
     margin-bottom: 10px;
@@ -301,23 +245,18 @@ nav a.active {
     opacity: 0.9;
 }
 
-/* HOVER */
 .card:hover {
     transform: translateY(-14px) scale(1.04);
     box-shadow: 0 30px 70px rgba(0,0,0,0.55);
 }
 
-/* ACTIVE CLICK */
 .card.active {
     transform: scale(1.1) translateY(-10px);
     border: 1px solid #38bdf8;
     box-shadow: 0 0 35px rgba(56,189,248,0.6);
-
-    /* darker background for contrast */
     background: rgba(15, 23, 42, 0.85);
 }
 
-/* ACTIVE TEXT  */
 .card.active h3 {
     color: #7dd3fc;
     text-shadow: 0 2px 10px rgba(0,0,0,0.6);
@@ -331,29 +270,20 @@ nav a.active {
 
 /* ================= FOOTER ================= */
 footer {
-    margin-top: 120px;
+    margin-top: auto;
     padding: 35px 20px;
     text-align: center;
     font-weight: bold;
-
-    background: linear-gradient(
-        135deg,
-        rgba(10, 15, 25, 0.75),
-        rgba(15, 23, 42, 0.55)
-    );
-
+    background: linear-gradient(135deg, rgba(10, 15, 25, 0.75), rgba(15, 23, 42, 0.55));
     backdrop-filter: blur(22px);
     border-top: 1px solid rgba(56,189,248,0.2);
-
     color: #94a3b8;
     font-size: 13px;
     letter-spacing: 0.6px;
-
     position: relative;
     overflow: hidden;
 }
 
-/* top glow line */
 footer::before {
     content: "";
     position: absolute;
@@ -366,7 +296,6 @@ footer::before {
     opacity: 0.6;
 }
 
-/* glow blob */
 footer::after {
     content: "";
     position: absolute;
@@ -384,71 +313,57 @@ footer span {
     text-shadow: 0 0 10px rgba(56,189,248,0.4);
 }
 
-/* HOME */
 #home {
     height: 10px;
 }
 </style>
-
 </head>
-
 <body>
 
 <header>
-
     <div class="logo">
         <img src="logo-animated.svg" alt="Ilmexa Logo">
     </div>
-
     <nav>
         <a href="#home">Home</a>
         <a href="login.php">Login</a>
         <a href="register.php">Register</a>
-
-        <?php if(isset($_SESSION['user'])) { ?>
+        <?php if(isset($_SESSION['id'])) { ?>
             <a href="dashboard.php">Dashboard</a>
             <a href="logout.php">Logout</a>
         <?php } ?>
     </nav>
-
 </header>
 
 <div id="home"></div>
 
 <div class="hero">
-
     <h2>Smart AI Learning Assistant</h2>
-
     <p>
         Ilmexa helps students solve homework, understand concepts, and learn faster
         with AI-powered explanations in simple language.
     </p>
 
-    <?php if(!isset($_SESSION['user'])) { ?>
+    <?php if(!isset($_SESSION['id'])) { ?>
         <a href="login.php" class="btn">Get Started</a>
-    <?php }  else { ?>
+    <?php } else { ?>
         <a href="dashboard.php" class="btn">Go to Dashboard</a>
     <?php } ?>
 
     <div class="features">
-
         <div class="card">
             <h3>📘 Homework Help</h3>
             <p>Step-by-step solutions for every subject in seconds.</p>
         </div>
-
         <div class="card">
             <h3>🧠 Smart Learning</h3>
             <p>AI simplifies complex topics into easy explanations.</p>
         </div>
-
         <div class="card">
             <h3>⚡ Instant Answers</h3>
             <p>Get fast AI responses anytime you need help.</p>
         </div>
-
     </div>
-
 </div>
 
 <footer>
@@ -457,7 +372,6 @@ footer span {
 
 <script>
 const cards = document.querySelectorAll(".card");
-
 cards.forEach(card => {
     card.addEventListener("click", () => {
         cards.forEach(c => c.classList.remove("active")); 
@@ -465,8 +379,5 @@ cards.forEach(card => {
     });
 });
 </script>
-
-
-
 </body>
 </html>

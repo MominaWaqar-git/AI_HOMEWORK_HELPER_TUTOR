@@ -2,13 +2,14 @@
 session_start();
 include "db.php";
 
-if (!isset($_SESSION['user'])) {
+if (!isset($_SESSION['user']) || !isset($_SESSION['id'])) {
     header("Location: login.php");
     exit();
 }
 
 $user_id = $_SESSION['id'];
 
+// Secure prepared statement aggregating unique chat blocks safely
 $stmt = $conn->prepare("
     SELECT chat_id, chat_title, MAX(created_at) as last_date
     FROM chats
@@ -26,32 +27,37 @@ $result = $stmt->get_result();
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Chat History</title>
+<title>Chat History - Ilmexa AI</title>
 
 <style>
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:Poppins;
+    font-family: 'Poppins', sans-serif;
 }
 
 body{
     background: radial-gradient(circle at top,#0f2027,#0b1220,#050814);
     color:#e2e8f0;
+    min-height: 100vh;
+    display: flex;          /* Added: Enables Flexbox on body */
+    flex-direction: column; /* Added: Arranges children vertically */
 }
 
-/* HEADER */
+/* ================= HEADER ================= */
 header{
     position:sticky;
     top:0;
+    z-index: 100;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:15px 50px;
-    background:rgba(10,15,25,0.7);
-    backdrop-filter:blur(20px);
-    border-bottom:1px solid rgba(56,189,248,0.2);
+    padding:14px 80px; /* Aligned header layout across systems */
+    background:rgba(10,15,25,0.75);
+    backdrop-filter:blur(22px);
+    border-bottom:1px solid rgba(56,189,248,0.15);
+    box-shadow:0 10px 30px rgba(0,0,0,0.25);
 }
 
 header::after {
@@ -62,14 +68,7 @@ header::after {
     transform: translateX(-50%);
     width: 65%;
     height: 2px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        #38bdf8,
-        #22c55e,
-        #facc15,
-        transparent
-    );
+    background: linear-gradient(90deg, transparent, #38bdf8, #22c55e, #facc15, transparent);
     opacity: 0.6;
 }
 
@@ -83,27 +82,21 @@ nav {
     gap: 18px;
 }
 
-/* links */
 nav a {
     text-decoration: none;
     color: #cbd5f5;
-    font-weight: 500;
     font-size: 14px;
     font-weight: bold;
     position: relative;
     padding: 6px 4px;
-
     transition: 0.3s ease;
 }
 
-/* hover glow text */
 nav a:hover {
-    font-weight: bold;
     color: #38bdf8;
     text-shadow: 0 0 10px rgba(56,189,248,0.3);
 }
 
-/* animated underline */
 nav a::after {
     content: "";
     position: absolute;
@@ -111,9 +104,7 @@ nav a::after {
     bottom: -4px;
     width: 0%;
     height: 2px;
-
     background: linear-gradient(90deg, #38bdf8, #22c55e, #facc15);
-
     transition: width 0.35s ease;
 }
 
@@ -121,102 +112,126 @@ nav a:hover::after {
     width: 100%;
 }
 
-/* active feel */
-nav a.active {
-    color: #38bdf8;
-    border-bottom: 2px solid #38bdf8;
-}
-
-/* CONTAINER */
+/* ================= CONTAINER ================= */
 .container{
-    padding:40px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 80px;
+    flex: 1; /* Added: Pushes the footer down to fill structural void */
 }
 
 h1{
     text-align:center;
-    margin-bottom:30px;
+    margin-bottom:40px;
     color:#38bdf8;
+    font-size: 32px;
 }
 
-/* CARD */
+/* ================= CARDS FRAME ================= */
 .card{
-    background:rgba(255,255,255,0.04);
-    padding:18px;
-    border-radius:14px;
-    margin-bottom:15px;
-    border:1px solid rgba(56,189,248,0.15);
-    transition:0.3s;
+    background:rgba(255,255,255,0.03);
+    padding:22px 25px;
+    border-radius:16px;
+    margin-bottom:20px;
+    border:1px solid rgba(56,189,248,0.12);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.3s ease;
+    backdrop-filter: blur(10px);
 }
 
 .card:hover{
-    transform:translateY(-5px);
+    transform: translateY(-4px);
+    border-color: rgba(56,189,248,0.3);
+    background: rgba(255,255,255,0.05);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
 
-/* BUTTONS */
-.view-btn{
-    padding:8px 12px;
-    border:none;
-    border-radius:8px;
-    background:#38bdf8;
-    color:black;
-    font-weight:bold;
-    cursor:pointer;
-    margin-top:10px;
+.card-details {
+    flex: 1;
+    padding-right: 20px;
 }
 
-.delete-btn{
-    padding:8px 12px;
-    border:none;
-    border-radius:8px;
-    background:#ef4444;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
-    margin-top:10px;
+.card-details h3 {
+    font-size: 18px;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 500px;
 }
 
-.delete-btn:hover{
-    transform:scale(1.05);
-}
-
-/* DATE */
 .date{
     font-size:12px;
     color:#94a3b8;
-    margin-top:5px;
 }
 
-/* EMPTY */
+.card-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* ================= INTERACTION COMPONENTS ================= */
+.btn{
+    padding:10px 16px;
+    border:none;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+    transition: 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn:hover {
+    transform: scale(1.04);
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.view-btn{
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    color: black;
+}
+
+.delete-btn{
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.delete-btn:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+}
+
 .empty{
     text-align:center;
-    margin-top:80px;
+    margin-top:100px;
     color:#94a3b8;
+    font-size: 16px;
 }
 
+/* ================= FOOTER ================= */
 footer {
     font-weight: bold;
-    margin-top: 120px;
     padding: 35px 20px;
     text-align: center;
-
-    background: linear-gradient(
-        135deg,
-        rgba(10, 15, 25, 0.75),
-        rgba(15, 23, 42, 0.55)
-    );
-
+    background: linear-gradient(135deg, rgba(10, 15, 25, 0.75), rgba(15, 23, 42, 0.55));
     backdrop-filter: blur(22px);
     border-top: 1px solid rgba(56,189,248,0.2);
-
     color: #94a3b8;
     font-size: 13px;
     letter-spacing: 0.6px;
-
     position: relative;
     overflow: hidden;
 }
 
-/* top glow line */
 footer::before {
     content: "";
     position: absolute;
@@ -225,84 +240,65 @@ footer::before {
     transform: translateX(-50%);
     width: 60%;
     height: 2px;
-    font-weight: bold;
     background: linear-gradient(90deg, transparent, #38bdf8, #22c55e, transparent);
     opacity: 0.6;
-}
-
-/* glow blob */
-footer::after {
-    content: "";
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    background: rgba(56,189,248,0.08);
-    filter: blur(80px);
-    bottom: -150px;
-    right: -100px;
 }
 
 footer span {
     color: #38bdf8;
     font-weight: bolder;
-    text-shadow: 0 0 10px rgba(56,189,248,0.4);
 }
-
 </style>
-
 </head>
 
 <body>
 
 <header>
     <div class="logo">
-        <img src="logo-animated.svg">
+        <img src="logo-animated.svg" alt="Ilmexa AI">
     </div>
 
     <nav>
         <a href="dashboard.php">Dashboard</a>
         <a href="chat.php">Chat</a>
-        <a href="history.php">History</a>
+        <a href="history.php" style="color: #38bdf8;">History</a>
         <a href="logout.php">Logout</a>
     </nav>
 </header>
 
 <div class="container">
 
-<h1>📜 Chat History</h1>
+    <h1>📜 Chat History</h1>
 
-<?php if($result->num_rows > 0){ ?>
+    <?php if($result->num_rows > 0){ ?>
+        <?php while($row = $result->fetch_assoc()){ 
+            // Secure fallback text logic if title is set to empty space
+            $raw_title = trim($row['chat_title']);
+            $display_title = (!empty($raw_title)) ? htmlspecialchars($raw_title) : "Untitled Discussion Thread";
+        ?>
 
-    <?php while($row = $result->fetch_assoc()){ ?>
+            <div class="card">
+                <div class="card-details">
+                    <h3 style="color:#38bdf8;">💬 <?php echo $display_title; ?></h3>
+                    <div class="date">🕒 <?php echo date("d M Y, h:i A", strtotime($row['last_date'])); ?></div>
+                </div>
 
-        <div class="card">
+                <div class="card-actions">
+                    <a href="view_chat.php?chat_id=<?php echo urlencode($row['chat_id']); ?>">
+                        <button class="btn view-btn">👁 View</button>
+                    </a>
 
-            <h3 style="color:#38bdf8;">
-                💬 <?php echo $row['chat_title'] ?? 'Untitled Chat'; ?>
-            </h3>
+                    <a href="delete_chat.php?chat_id=<?php echo urlencode($row['chat_id']); ?>"
+                       onclick="return confirmDelete(event)">
+                        <button class="btn delete-btn">🗑 Delete</button>
+                    </a>
+                </div>
+            </div>
 
-            <div class="date">🕒 <?php echo $row['last_date']; ?></div>
-
-            <!-- VIEW -->
-            <a href="view_chat.php?chat_id=<?php echo urlencode($row['chat_id']); ?>">
-                <button class="view-btn">👁 View</button>
-            </a>
-
-            <!-- DELETE (FIXED ID ISSUE) -->
-            <a href="delete_chat.php?chat_id=<?php echo urlencode($row['chat_id']); ?>"
-               onclick="return confirmDelete(event)">
-                <button class="delete-btn">🗑 Delete</button>
-            </a>
-
-        </div>
-
+        <?php } ?>
+    <?php } else { ?>
+        <div class="empty">No chat history found on your account 😔</div>
     <?php } ?>
-
-<?php } else { ?>
-
-    <div class="empty">No chat history found 😔</div>
-
-<?php } ?>
 
 </div>
 
@@ -313,13 +309,16 @@ footer span {
 <script>
 function confirmDelete(event){
     event.preventDefault();
+    
+    // Get closest parent anchor tags dynamically to prevent element reference breakdown
+    const anchor = event.target.closest("a");
+    if (!anchor) return false;
 
-    let ok = confirm("⚠ Are you sure you want to delete this chat?");
+    let confirmAction = confirm("⚠ Operational Alert:\nAre you sure you want to permanently purge this chat thread?");
 
-    if(ok){
-        window.location.href = event.target.closest("a").href;
+    if(confirmAction){
+        window.location.href = anchor.href;
     }
-
     return false;
 }
 </script>
