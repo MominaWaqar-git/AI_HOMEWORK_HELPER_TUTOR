@@ -11,11 +11,10 @@ if (!isset($_SESSION['id'])) {
 $user_id = (int)$_SESSION['id']; // Cast type for SQL optimization stability
 $dataPoints = [];
 
-// Secure optimized loop data mapping layer
+// Secure optimized loop data mapping layer (For Chart)
 for($i=6; $i>=0; $i--){
     $date = date("Y-m-d", strtotime("-$i days"));
     
-    // Using clean syntax interpolation safely with integer parameters
     $q = "SELECT COUNT(*) as total FROM chats 
           WHERE user_id = $user_id 
           AND DATE(created_at) = '$date'";
@@ -28,6 +27,30 @@ for($i=6; $i>=0; $i--){
         $dataPoints[] = 0;
     }
 }
+
+// ==========================================
+// 🔔 NEW: NOTIFICATION BELL LOGIC (TODAY & TOMORROW)
+// ==========================================
+$today_date = date("Y-m-d");
+$tomorrow_date = date("Y-m-d", strtotime("+1 day"));
+
+$noti_q = "SELECT title, schedule_date, start_time, end_time 
+           FROM student_schedules 
+           WHERE user_id = ? 
+           AND (schedule_date = ? OR schedule_date = ?)
+           ORDER BY schedule_date ASC, start_time ASC";
+
+$stmt_noti = $conn->prepare($noti_q);
+$stmt_noti->bind_param("iss", $user_id, $today_date, $tomorrow_date);
+$stmt_noti->execute();
+$noti_res = $stmt_noti->get_result();
+
+$notification_list = [];
+while($row = $noti_res->fetch_assoc()) {
+    $notification_list[] = $row;
+}
+$total_notifications = count($notification_list);
+$stmt_noti->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -37,7 +60,7 @@ for($i=6; $i>=0; $i--){
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-/* ================= GLOBAL LAYOUT SYSTEM (FIXES FOOTER AT BASE) ================= */
+/* ================= GLOBAL LAYOUT SYSTEM ================= */
 * {
     margin: 0;
     padding: 0;
@@ -54,7 +77,6 @@ body {
     flex-direction: column;
 }
 
-/* ================= BACKGROUND GLOW ================= */
 body::before, body::after {
     content: "";
     position: fixed;
@@ -64,17 +86,8 @@ body::before, body::after {
     z-index: -1;
 }
 
-body::before {
-    background: rgba(56, 189, 248, 0.18);
-    top: -150px;
-    left: -150px;
-}
-
-body::after {
-    background: rgba(34, 197, 94, 0.14);
-    bottom: -160px;
-    right: -160px;
-}
+body::before { background: rgba(56, 189, 248, 0.18); top: -150px; left: -150px; }
+body::after { background: rgba(34, 197, 94, 0.14); bottom: -160px; right: -160px; }
 
 /* ================= HEADER ================= */
 header {
@@ -103,207 +116,198 @@ header::after {
     opacity: 0.6;
 }
 
-.logo img {
-    height: 55px;
-    transition: 0.35s ease;
-}
+.logo img { height: 55px; transition: 0.35s ease; }
+.logo img:hover { transform: scale(1.05); filter: drop-shadow(0 0 18px rgba(56,189,248,0.8)); }
 
-.logo img:hover {
-    transform: scale(1.05);
-    filter: drop-shadow(0 0 18px rgba(56,189,248,0.8));
-}
-
-nav {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-}
-
-nav a {
-    text-decoration: none;
-    color: #cbd5f5;
-    font-size: 14px;
-    font-weight: bold;
-    position: relative;
-    padding: 6px 4px;
-    transition: 0.3s ease;
-}
-
-nav a:hover {
-    color: #38bdf8;
-    text-shadow: 0 0 10px rgba(56,189,248,0.3);
-}
+nav { display: flex; align-items: center; gap: 22px; }
+nav a { text-decoration: none; color: #cbd5f5; font-size: 14px; font-weight: bold; position: relative; padding: 6px 4px; transition: 0.3s ease; }
+nav a:hover { color: #38bdf8; text-shadow: 0 0 10px rgba(56,189,248,0.3); }
 
 nav a::after {
-    content: "";
+    content: ""; position: absolute; left: 0; bottom: -4px; width: 0%; height: 2px;
+    background: linear-gradient(90deg, #38bdf8, #22c55e, #facc15); transition: width 0.35s ease;
+}
+nav a:hover::after { width: 100%; }
+
+/* ================= 🔔 PREMIUM NOTIFICATION STYLES ================= */
+.notification-container {
+    position: relative;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.noti-bell-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: #facc15; /* Golden Yellow color as requested */
+    position: relative;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, filter 0.2s;
+}
+
+.noti-bell-btn:hover {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.6));
+}
+
+.noti-badge {
     position: absolute;
-    left: 0;
-    bottom: -4px;
-    width: 0%;
-    height: 2px;
-    background: linear-gradient(90deg, #38bdf8, #22c55e, #facc15);
-    transition: width 0.35s ease;
-}
-
-nav a:hover::after {
-    width: 100%;
-}
-
-/* ================= CONTAINER ================= */
-.container {
-    padding: 40px 80px;
-    flex: 1;
-}
-
-.welcome {
-    text-align: center;
-    font-size: 42px;
-    margin-bottom: 40px;
+    top: -2px;
+    right: -2px;
+    background: #ef4444; /* Red color filled circle */
+    color: white; /* White text */
+    font-size: 10px;
     font-weight: bold;
-    animation: fadeInUp 1s ease;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    border: 1px solid #060b13;
 }
 
-.welcome span {
-    background: linear-gradient(270deg, #38bdf8, #22c55e, #facc15, #a855f7, #38bdf8);
-    background-size: 800% 800%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradientMove 6s ease infinite;
+.noti-dropdown {
+    position: absolute;
+    top: 45px;
+    right: 0;
+    width: 320px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(250, 204, 21, 0.25); /* Subtle golden tint border */
+    border-radius: 14px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    display: none; /* Controlled via JS toggle */
+    z-index: 1000;
 }
 
-@keyframes gradientMove {
-    0% { background-position: 0% 50% }
-    50% { background-position: 100% 50% }
-    100% { background-position: 0% 50% }
+.noti-dropdown.active {
+    display: block;
+    animation: fadeInDown 0.25s ease;
 }
 
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(40px); }
+.noti-header {
+    padding: 12px 16px;
+    background: rgba(250, 204, 21, 0.08);
+    border-bottom: 1px solid rgba(250, 204, 21, 0.15);
+    font-size: 13px;
+    font-weight: bold;
+    color: #facc15;
+    display: flex;
+    justify-content: space-between;
+}
+
+.noti-body {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.noti-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.2s;
+}
+
+.noti-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.noti-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #e2e8f0;
+    margin-bottom: 4px;
+}
+
+.noti-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+}
+
+.noti-tag-today { color: #22c55e; font-weight: bold; }
+.noti-tag-tomorrow { color: #38bdf8; font-weight: bold; }
+.noti-time { color: #94a3b8; }
+
+.noti-empty {
+    padding: 25px;
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ================= PREMIUM MODERN UPGRADED CARDS ================= */
-.cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-    perspective: 1200px;
-    margin-bottom: 50px;
+/* Custom Scrollbar for Dropdown */
+.noti-body::-webkit-scrollbar { width: 4px; }
+.noti-body::-webkit-scrollbar-thumb { background: rgba(250, 204, 21, 0.3); border-radius: 4px; }
+
+/* ================= CONTAINER & CARDS ================= */
+.container { padding: 40px 80px; flex: 1; }
+.welcome { text-align: center; font-size: 42px; margin-bottom: 40px; font-weight: bold; animation: fadeInUp 1s ease; }
+.welcome span {
+    background: linear-gradient(270deg, #38bdf8, #22c55e, #facc15, #a855f7, #38bdf8);
+    background-size: 800% 800%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    animation: gradientMove 6s ease infinite;
 }
 
+@keyframes gradientMove { 0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; perspective: 1200px; margin-bottom: 50px; }
 .card {
-    padding: 40px 30px;
-    border-radius: 20px;
-    position: relative;
-    overflow: hidden;
-    color: white;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transform-style: preserve-3d;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    animation: floatCard 5s ease-in-out infinite;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    padding: 40px 30px; border-radius: 20px; position: relative; overflow: hidden; color: white; text-align: center;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;
+    transform-style: preserve-3d; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: floatCard 5s ease-in-out infinite; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
 }
 
 .card:nth-child(1)::before { background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(56, 189, 248, 0.3); }
 .card:nth-child(2)::before { background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.05)); border: 1px solid rgba(34, 197, 94, 0.3); }
 .card:nth-child(3)::before { background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.05)); border: 1px solid rgba(168, 85, 247, 0.3); }
 
-.card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 20px;
-    z-index: 0;
-    backdrop-filter: blur(15px);
-    transition: 0.4s ease;
-}
-
-.card > * {
-    position: relative;
-    z-index: 2;
-}
-
-.card h3 {
-    font-size: 22px;
-    margin-bottom: 12px;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    transition: 0.3s;
-}
+.card::before { content: ""; position: absolute; inset: 0; border-radius: 20px; z-index: 0; backdrop-filter: blur(15px); transition: 0.4s ease; }
+.card > * { position: relative; z-index: 2; }
+.card h3 { font-size: 22px; margin-bottom: 12px; font-weight: bold; letter-spacing: 0.5px; transition: 0.3s; }
 
 .card:nth-child(1):hover h3 { color: #38bdf8; text-shadow: 0 0 15px rgba(56, 189, 248, 0.6); }
 .card:nth-child(2):hover h3 { color: #22c55e; text-shadow: 0 0 15px rgba(34, 197, 94, 0.6); }
 .card:nth-child(3):hover h3 { color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.6); }
+.card p { font-size: 14px; color: #94a3b8; line-height: 1.5; }
 
-.card p {
-    font-size: 14px;
-    color: #94a3b8;
-    line-height: 1.5;
-}
-
-.card:hover {
-    transform: translateY(-12px) scale(1.03);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
-}
-
+.card:hover { transform: translateY(-12px) scale(1.03); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6); }
 .card:nth-child(1):hover::before { border-color: #38bdf8; background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(14, 165, 233, 0.08)); }
 .card:nth-child(2):hover::before { border-color: #22c55e; background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(22, 163, 74, 0.08)); }
 .card:nth-child(3):hover::before { border-color: #a855f7; background: linear-gradient(135deg, rgba(145, 66, 219, 0.25), rgba(147, 51, 234, 0.08)); }
 
-@keyframes floatCard {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-6px); }
-    100% { transform: translateY(0px); }
-}
+@keyframes floatCard { 0% { transform: translateY(0px); } 50% { transform: translateY(-6px); } 100% { transform: translateY(0px); } }
 
 /* ================= GRAPH SECTION ================= */
 .graph {
-    margin-top: 50px;
-    padding: 30px;
-    border-radius: 18px;
+    margin-top: 50px; padding: 30px; border-radius: 18px;
     background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
-    border: 1px solid rgba(56, 189, 248, 0.15);
-    max-width: 950px;
-    margin-left: auto;
-    margin-right: auto;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 20px 45px rgba(0,0,0,0.4);
+    border: 1px solid rgba(56, 189, 248, 0.15); max-width: 950px; margin-left: auto; margin-right: auto;
+    backdrop-filter: blur(20px); box-shadow: 0 20px 45px rgba(0,0,0,0.4);
 }
 
 /* ================= FOOTER ================= */
 footer {
-    padding: 25px 20px;
-    text-align: center;
-    font-weight: bold;
-    background: #060b13;
-    border-top: 1px solid rgba(56, 189, 248, 0.15);
-    color: #94a3b8;
-    font-size: 13px;
-    letter-spacing: 0.6px;
-    position: relative;
-    margin-top: auto;
+    padding: 25px 20px; text-align: center; font-weight: bold; background: #060b13;
+    border-top: 1px solid rgba(56, 189, 248, 0.15); color: #94a3b8; font-size: 13px;
+    letter-spacing: 0.6px; position: relative; margin-top: auto;
 }
-
-footer::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #38bdf8, #22c55e, transparent);
-    opacity: 0.6;
-}
-
-footer span {
-    color: #38bdf8;
-}
+footer::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 60%; height: 2px; background: linear-gradient(90deg, transparent, #38bdf8, #22c55e, transparent); opacity: 0.6; }
+footer span { color: #38bdf8; }
 </style>
 </head>
 <body>
@@ -317,6 +321,47 @@ footer span {
         <a href="chat.php">Chat</a>
         <a href="schedule.php">Schedule</a>
         <a href="logout.php">Logout</a>
+        
+        <div class="notification-container">
+            <button class="noti-bell-btn" id="notiBellBtn" title="Upcoming Tasks">
+                🔔
+                <?php if ($total_notifications > 0): ?>
+                    <span class="noti-badge"><?php echo $total_notifications; ?></span>
+                <?php endif; ?>
+            </button>
+            
+            <div class="noti-dropdown" id="notiDropdown">
+                <div class="noti-header">
+                    <span>Upcoming Timeline</span>
+                    <span><?php echo $total_notifications; ?> Tasks</span>
+                </div>
+                <div class="noti-body">
+                    <?php if ($total_notifications == 0): ?>
+                        <div class="noti-empty">🎉 No tasks for today or tomorrow!</div>
+                    <?php else: ?>
+                        <?php foreach ($notification_list as $task): ?>
+                            <?php 
+                                $is_today = ($task['schedule_date'] == $today_date);
+                                $task_time = date("h:i A", strtotime($task['start_time']));
+                            ?>
+                            <div class="noti-item">
+                                <div class="noti-title"><?php echo htmlspecialchars($task['title']); ?></div>
+                                <div class="noti-meta">
+                                    <?php if ($is_today): ?>
+                                        <span class="noti-tag-today">Today</span>
+                                    <?php else: ?>
+                                        <span class="noti-tag-tomorrow">Tomorrow</span>
+                                    <?php endif; ?>
+                                    <span class="noti-time">🕒 <?php echo $task_time; ?></span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        
     </nav>
 </header>
 
@@ -351,6 +396,23 @@ footer span {
 </footer>
 
 <script>
+// --- 🔔 JS TOGGLE FOR NOTIFICATION DROPDOWN ---
+const notiBellBtn = document.getElementById('notiBellBtn');
+const notiDropdown = document.getElementById('notiDropdown');
+
+notiBellBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    notiDropdown.classList.toggle('active');
+});
+
+// Dropdown ko band karne ke liye agar user bahar click kare
+document.addEventListener('click', (e) => {
+    if (!notiDropdown.contains(e.target) && e.target !== notiBellBtn) {
+        notiDropdown.classList.remove('active');
+    }
+});
+
+// --- CHART JS LAYER ---
 new Chart(document.getElementById("chart"), {
     type: "line",
     data: {

@@ -342,7 +342,7 @@ footer span {
         <img src="logo-animated.svg" alt="Ilmexa AI">
     </div>
     <nav>
-        <span style="color: #38bdf8; font-weight: bold; margin-right: 10px;">Ayesha 👤</span>
+        <span style="color: #38bdf8; font-weight: bold; margin-right: 10px;"></span>
         <a href="dashboard.php">Dashboard</a>
         <a href="history.php">History</a>
         <a href="logout.php" class="exit-btn">Exit</a>

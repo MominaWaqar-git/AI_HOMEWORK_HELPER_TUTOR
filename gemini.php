@@ -95,7 +95,7 @@ while($row = $result->fetch_assoc()){
 $historyText = implode("\n", array_reverse($history));
 
 /* ================= GEMINI API SETUP ================= */
-$apiKey = "API_KEY_HERE"; // REPLACE WITH YOUR GOOGLE CLOUD API KEY
+$apiKey = "API KEY HERE"; // REPLACE WITH YOUR GOOGLE CLOUD API KEY
 $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey";
 
 /* ================= FINAL PROMPT STRUCTURE ================= */

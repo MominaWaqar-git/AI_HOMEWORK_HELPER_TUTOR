@@ -10,6 +10,7 @@ if (!isset($_SESSION['user']) || !isset($_SESSION['id'])) {
 $user_id = $_SESSION['id'];
 $message = "";
 
+// --- TASK ADD KARNE KA LOGIC ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_schedule'])) {
     $title = trim($_POST['title']);
     $desc = trim($_POST['description']);
@@ -18,24 +19,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_schedule'])) {
     $end = $_POST['end_time'];
 
     if (!empty($title) && !empty($date) && !empty($start) && !empty($end)) {
-        $stmt = $conn->prepare("
-            INSERT INTO student_schedules 
-            (user_id, title, task_description, schedule_date, start_time, end_time) 
-            VALUES (?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->bind_param("isssss", $user_id, $title, $desc, $date, $start, $end);
-
-        if ($stmt->execute()) {
-            $message = "<div class='alert success'>🎉 Schedule task created successfully!</div>";
+        
+        // Validation: Check if End Time is before Start Time
+        if (strtotime($end) <= strtotime($start)) {
+            $message = "<div class='alert error'>❌ End time must be after the start time.</div>";
         } else {
-            $message = "<div class='alert error'>❌ Operational Error updating log.</div>";
+            $stmt = $conn->prepare("
+                INSERT INTO student_schedules 
+                (user_id, title, task_description, schedule_date, start_time, end_time) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->bind_param("isssss", $user_id, $title, $desc, $date, $start, $end);
+
+            if ($stmt->execute()) {
+                $message = "<div class='alert success'>🎉 Schedule task created successfully!</div>";
+            } else {
+                $message = "<div class='alert error'>❌ Operational Error updating log.</div>";
+            }
+            $stmt->close();
         }
-        $stmt->close();
+    } else {
+        $message = "<div class='alert error'>❌ Please fill all required fields.</div>";
     }
 }
 
-if (isset($_GET['delete_id'])) {
-    $delete_id = intval($_GET['delete_id']);
+// --- TASK DELETE KARNE KA LOGIC (Using POST for Security) ---
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_id'])) {
+    $delete_id = intval($_POST['delete_id']);
     $stmt = $conn->prepare("DELETE FROM student_schedules WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $delete_id, $user_id);
     $stmt->execute();
@@ -44,6 +54,7 @@ if (isset($_GET['delete_id'])) {
     exit();
 }
 
+// --- SCHEDULE LIST FETCH KARNA ---
 $stmt = $conn->prepare("SELECT * FROM student_schedules WHERE user_id = ? ORDER BY schedule_date ASC, start_time ASC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -56,19 +67,50 @@ $schedules = $stmt->get_result();
     <meta charset="UTF-8">
     <title>Manage Study Schedule - Ilmexa AI</title>
     <style>
-        /* [Integrating base styles tailored above] */
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }
         body { background: radial-gradient(circle at top,#0f2027,#0b1220,#050814); color:#e2e8f0; min-height: 100vh; display: flex; flex-direction: column; }
         
         header { position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 14px 80px; background: rgba(10,15,25,0.85); backdrop-filter: blur(22px); border-bottom: 1px solid rgba(56,189,248,0.15); }
         header::after { content: ""; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 65%; height: 2px; background: linear-gradient(90deg, transparent, #38bdf8, #22c55e, #facc15, transparent); opacity: 0.6; }
-        nav { display: flex; align-items: center; gap: 18px; }
-        nav a { text-decoration: none; color: #cbd5f5; font-weight: bold; font-size: 14px; padding: 6px 4px; transition: 0.3s; }
-        nav a:hover { color: #38bdf8; text-shadow: 0 0 10px rgba(56,189,248,0.3); }
+        /* ================= NAV SYSTEM WITH SLIDING GRADIENT LAYER ================= */
+nav { 
+    display: flex; 
+    align-items: center; 
+    gap: 18px; 
+}
 
+nav a { 
+    text-decoration: none; 
+    color: #cbd5f5; 
+    font-weight: bold; 
+    font-size: 14px; 
+    padding: 6px 4px; 
+    position: relative; /* 👈 Yeh line zaroori hai taake bottom line iske mutabiq position ho */
+    transition: 0.3s ease; 
+}
+
+nav a:hover { 
+    color: #38bdf8; 
+    text-shadow: 0 0 10px rgba(56,189,248,0.3); 
+}
+
+/* ✨ Yeh hai wo hidden colorful line jo hover karne par smoothly bahaar aayegi */
+nav a::after {
+    content: ""; 
+    position: absolute; 
+    left: 0; 
+    bottom: -4px; 
+    width: 0%; /* Shuru me line ki width 0 hogi */
+    height: 2px; 
+    background: linear-gradient(90deg, #38bdf8, #22c55e, #facc15); 
+    transition: width 0.35s ease; 
+}
+
+/* Jab nav element par hover hoga toh line 100% phail jayegi */
+nav a:hover::after { 
+    width: 100%; 
+}
         .schedule-container { flex: 1; width: 100%; max-width: 1400px; margin: 0 auto; padding: 40px 50px; }
-        
-        /* Fixed Aspect Grid Ratio for wider form view */
         .grid { display: grid; grid-template-columns: 1.3fr 1.7fr; gap: 35px; margin-top: 20px; }
 
         .form-card, .list-card {
@@ -95,12 +137,33 @@ $schedules = $stmt->get_result();
         th, td { padding: 14px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
         th { color: #38bdf8; font-size: 13px; text-transform: uppercase; }
         
-        .btn-delete { color: #ef4444; text-decoration: none; font-weight: bold; font-size: 13px; padding: 6px 12px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); transition: 0.2s; }
+        .btn-delete { color: #ef4444; border: none; font-weight: bold; font-size: 13px; padding: 6px 12px; border-radius: 6px; background: rgba(239, 68, 68, 0.1); cursor: pointer; transition: 0.2s; }
         .btn-delete:hover { background: #ef4444; color: white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
 
         .alert { padding: 14px; border-radius: 10px; margin-bottom: 25px; font-weight: bold; }
         .success { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #22c55e; }
         .error { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #ef4444; }
+
+        /* --- Input text aur values ko white karne ke liye --- */
+        input[type="date"], input[type="time"] {
+            color: white;
+        }
+
+        /* --- Chrome, Safari, aur Edge me Calendar aur Time icons ko White (Light) karne ka magic --- */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(100%); /* Isse black icon completely white ho jata hai */
+        cursor: pointer;
+        opacity: 0.8;
+        transition: 0.2s;
+        }
+
+        /* Hover karne par thoda sa glow effect */
+        input[type="date"]::-webkit-calendar-picker-indicator:hover,
+        input[type="time"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+        filter: invert(1) brightness(100%) drop-shadow(0 0 4px #38bdf8);
+        }
 
         footer { width: 100%; font-weight: bold; padding: 30px 20px; text-align: center; background: #060b13; border-top: 1px solid rgba(56, 189, 248, 0.15); color: #94a3b8; font-size: 13px; margin-top: auto; }
         footer span { color: #38bdf8; }
@@ -164,7 +227,12 @@ $schedules = $stmt->get_result();
                                 <td style="color: #22c55e; font-weight:500;">
                                     <?php echo date("h:i A", strtotime($row['start_time'])) . " - " . date("h:i A", strtotime($row['end_time'])); ?>
                                 </td>
-                                <td><a href="schedule.php?delete_id=<?php echo $row['id']; ?>" class="btn-delete" onclick="return confirm('Drop task?')">Delete</a></td>
+                                <td>
+                                    <form action="schedule.php" method="POST" onsubmit="return confirm('Drop task?')" style="display:inline;">
+                                        <input type="hidden" name="delete_id" value="<?php echo $row['id']; ?>">
+                                        <button type="submit" class="btn-delete">Delete</button>
+                                    </form>
+                                </td>
                             </tr>
                         <?php endwhile; ?>
                     </tbody>
